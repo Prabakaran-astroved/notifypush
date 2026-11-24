@@ -65,6 +65,14 @@ export const getTestLogs = () => {
   return api.get('/test-logs');
 };
 
+export const deleteTestLogs = (ids) => {
+  return api.delete('/test-logs', { data: { ids } });
+};
+
+export const deleteTestLog = (id) => {
+  return api.delete(`/test-logs/${id}`);
+};
+
 export const getExportUrl = (campaignId, status = 'all') => {
   return `/api/webpushr/campaigns/${campaignId}/export?status=${status}`;
 };

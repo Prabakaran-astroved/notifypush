@@ -342,10 +342,51 @@ router.get('/', async (req, res) => {
  */
 router.get('/test-logs', async (req, res) => {
   try {
-    const logs = await WebpushrTestNotification.find().sort({ createdAt: -1 }).limit(30);
+    const logs = await WebpushrTestNotification.find().sort({ createdAt: -1 }).limit(100);
     res.json({ success: true, logs });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Failed to fetch test logs' });
+  }
+});
+
+/**
+ * DELETE /api/webpushr/campaigns/test-logs
+ * Bulk delete selected test notification logs
+ */
+router.delete('/test-logs', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'Please provide an array of test log IDs to delete.' });
+    }
+
+    const deleteResult = await WebpushrTestNotification.deleteMany({ _id: { $in: ids } });
+    res.json({
+      success: true,
+      message: `Successfully deleted ${deleteResult.deletedCount} log(s).`,
+      deletedCount: deleteResult.deletedCount
+    });
+  } catch (err) {
+    console.error('Error deleting test logs:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete test logs' });
+  }
+});
+
+/**
+ * DELETE /api/webpushr/campaigns/test-logs/:id
+ * Delete a single test notification log
+ */
+router.delete('/test-logs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await WebpushrTestNotification.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ error: 'Log entry not found' });
+    }
+    res.json({ success: true, message: 'Log entry deleted successfully.' });
+  } catch (err) {
+    console.error('Error deleting test log:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete test log' });
   }
 });
 
@@ -784,19 +825,6 @@ router.post('/send-sid-test', async (req, res) => {
   } catch (err) {
     console.error('Error in send-sid-test route:', err);
     res.status(500).json({ error: err.message || 'Internal server error while sending SID test notification' });
-  }
-});
-
-/**
- * GET /api/webpushr/campaigns/test-logs
- * Fetch recent test notification history (including scheduled waiting pushes)
- */
-router.get('/test-logs', async (req, res) => {
-  try {
-    const logs = await WebpushrTestNotification.find().sort({ createdAt: -1 }).limit(30);
-    res.json({ success: true, logs });
-  } catch (err) {
-    res.status(500).json({ error: err.message || 'Failed to fetch test logs' });
   }
 });
 
