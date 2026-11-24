@@ -25,6 +25,13 @@ export default function Sidebar({ currentView, setCurrentView }) {
       name: 'Create Campaign',
       icon: Sparkles,
       parent: 'Webpushr'
+    },
+    {
+      id: 'segment',
+      name: 'Notification Test Studio',
+      icon: Users,
+      parent: 'Webpushr',
+      badge: 'Test'
     }
   ];
 

@@ -53,6 +53,18 @@ export const deleteCampaign = (campaignId) => {
   return api.delete(`/${campaignId}`);
 };
 
+export const sendSegmentNotification = (data) => {
+  return api.post('/send-segment', data);
+};
+
+export const sendSidTestNotification = (data) => {
+  return api.post('/send-sid-test', data);
+};
+
+export const getTestLogs = () => {
+  return api.get('/test-logs');
+};
+
 export const getExportUrl = (campaignId, status = 'all') => {
   return `/api/webpushr/campaigns/${campaignId}/export?status=${status}`;
 };

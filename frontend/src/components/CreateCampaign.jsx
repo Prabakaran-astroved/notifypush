@@ -397,11 +397,16 @@ export default function CreateCampaign({ onCancel, onCreatedSuccess }) {
           )}
 
           {/* Action buttons */}
-          <div className="flex justify-end pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-slate-100 gap-3">
+            {!campaignName.trim() ? (
+              <span className="text-xs font-medium text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+                ⚠️ Please enter a <strong>Campaign Name</strong> above to continue.
+              </span>
+            ) : <span />}
             <button
               onClick={goToStep2}
               disabled={!parseResults || parseResults.validCount === 0 || !campaignName.trim()}
-              className="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 text-white rounded-xl text-sm font-semibold shadow-md shadow-orange-500/20 transition"
+              className="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-sm font-semibold shadow-md shadow-orange-500/20 transition"
             >
               Configure Notification
               <ArrowRight className="w-4 h-4 ml-2" />

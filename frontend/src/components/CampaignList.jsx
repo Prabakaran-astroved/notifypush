@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   Play, 
   Pause, 
-  RotateCcw, 
   Trash2, 
   Eye, 
   Edit3, 
@@ -26,7 +25,6 @@ export default function CampaignList({
   onStartCampaign,
   onPauseCampaign,
   onResumeCampaign,
-  onRetryFailed,
   onDeleteCampaign,
   searchQuery,
   setSearchQuery,
@@ -262,16 +260,6 @@ export default function CampaignList({
                             title="Resume Sending"
                           >
                             <Play className="w-4 h-4" />
-                          </button>
-                        )}
-
-                        {camp.failedCount > 0 && camp.campaignStatus !== 'processing' && (
-                          <button
-                            onClick={() => onRetryFailed(camp._id)}
-                            className="p-1.5 text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded-lg transition"
-                            title="Retry Failed Subscribers"
-                          >
-                            <RotateCcw className="w-4 h-4" />
                           </button>
                         )}
                       </div>

@@ -4,6 +4,7 @@ const multer = require('multer');
 const xlsx = require('xlsx');
 const WebpushrCampaign = require('../models/WebpushrCampaign');
 const WebpushrCampaignSubscriber = require('../models/WebpushrCampaignSubscriber');
+const WebpushrTestNotification = require('../models/WebpushrTestNotification');
 const {
   startCampaign,
   pauseCampaign,
@@ -11,6 +12,7 @@ const {
   retryFailedSubscribers,
   updateCampaignStats
 } = require('../services/campaignQueueService');
+const { sendWebpushrNotification, sendWebpushrSegmentNotification } = require('../services/webpushrService');
 
 // Configure multer for file uploads in memory
 const upload = multer({
@@ -335,6 +337,19 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/webpushr/campaigns/test-logs
+ * Fetch recent test notification history (including scheduled waiting pushes)
+ */
+router.get('/test-logs', async (req, res) => {
+  try {
+    const logs = await WebpushrTestNotification.find().sort({ createdAt: -1 }).limit(30);
+    res.json({ success: true, logs });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch test logs' });
+  }
+});
+
+/**
  * GET /api/webpushr/campaigns/:campaignId
  * Get single campaign info and live statistics
  */
@@ -570,6 +585,218 @@ router.get('/:campaignId/export', async (req, res) => {
   } catch (error) {
     console.error('Error exporting campaign report:', error);
     res.status(500).json({ error: error.message || 'Failed to export report' });
+  }
+});
+
+/**
+ * POST /api/webpushr/campaigns/send-segment
+ * Send push notification to one or more Webpushr Segment IDs
+ */
+router.post('/send-segment', async (req, res) => {
+  try {
+    const {
+      segment,
+      title,
+      message,
+      target_url,
+      name,
+      icon,
+      image,
+      expire_push,
+      auto_hide,
+      send_at,
+      action_buttons
+    } = req.body;
+
+    if (!segment || (Array.isArray(segment) && segment.length === 0)) {
+      return res.status(400).json({ error: 'At least one Segment ID is required' });
+    }
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Notification Title is required' });
+    }
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Notification Message is required' });
+    }
+
+    if (!target_url || !target_url.trim()) {
+      return res.status(400).json({ error: 'Target URL is required' });
+    }
+
+    const result = await sendWebpushrSegmentNotification({
+      segment,
+      title: title.trim(),
+      message: message.trim(),
+      target_url: target_url.trim(),
+      name,
+      icon,
+      image,
+      expire_push,
+      auto_hide,
+      send_at,
+      action_buttons
+    });
+
+    // Record in test notifications collection
+    const isScheduled = !!send_at;
+    let scheduledDate = null;
+    if (send_at) {
+      const d = new Date(send_at);
+      if (!isNaN(d.getTime())) scheduledDate = d;
+    }
+
+    const testRecord = new WebpushrTestNotification({
+      type: 'segment',
+      target: Array.isArray(segment) ? segment.join(', ') : String(segment),
+      title: title.trim(),
+      message: message.trim(),
+      target_url: target_url.trim(),
+      icon: icon || '',
+      image: image || '',
+      expire_push: expire_push || '',
+      auto_hide: auto_hide === true || auto_hide === 'true' || auto_hide === 1,
+      send_at: result.payload?.send_at || send_at || null,
+      isScheduled,
+      scheduledTime: scheduledDate,
+      status: result.success ? (isScheduled ? 'scheduled_waiting' : 'sent') : 'failed',
+      responseStatusCode: result.statusCode,
+      responseBody: result.data,
+      payloadSent: result.payload
+    });
+    await testRecord.save().catch(e => console.error('Error saving test record:', e));
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'Segment notification sent successfully!',
+        data: result.data,
+        payload: result.payload,
+        statusCode: result.statusCode,
+        record: testRecord
+      });
+    } else {
+      res.status(result.statusCode >= 400 && result.statusCode < 600 ? result.statusCode : 400).json({
+        success: false,
+        error: result.error || 'Failed to send segment notification',
+        statusCode: result.statusCode,
+        data: result.data,
+        payload: result.payload
+      });
+    }
+  } catch (err) {
+    console.error('Error in send-segment route:', err);
+    res.status(500).json({ error: err.message || 'Internal server error while sending segment notification' });
+  }
+});
+
+/**
+ * POST /api/webpushr/campaigns/send-sid-test
+ * Send test push notification to a specific single Subscriber ID
+ */
+router.post('/send-sid-test', async (req, res) => {
+  try {
+    const {
+      sid,
+      title,
+      message,
+      target_url,
+      icon,
+      expire_push,
+      auto_hide,
+      send_at,
+      action_buttons
+    } = req.body;
+
+    if (!sid || !String(sid).trim()) {
+      return res.status(400).json({ error: 'Subscriber ID (SID) is required' });
+    }
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Notification Title is required' });
+    }
+
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Notification Message is required' });
+    }
+
+    if (!target_url || !target_url.trim()) {
+      return res.status(400).json({ error: 'Target URL is required' });
+    }
+
+    const result = await sendWebpushrNotification({
+      sid: String(sid).trim(),
+      title: title.trim(),
+      message: message.trim(),
+      target_url: target_url.trim(),
+      icon,
+      expire_push,
+      auto_hide,
+      send_at,
+      action_buttons
+    });
+
+    // Record in test notifications collection
+    const isScheduled = !!send_at;
+    let scheduledDate = null;
+    if (send_at) {
+      const d = new Date(send_at);
+      if (!isNaN(d.getTime())) scheduledDate = d;
+    }
+
+    const testRecord = new WebpushrTestNotification({
+      type: 'sid',
+      target: String(sid).trim(),
+      title: title.trim(),
+      message: message.trim(),
+      target_url: target_url.trim(),
+      icon: icon || '',
+      expire_push: expire_push || '',
+      auto_hide: auto_hide === true || auto_hide === 'true' || auto_hide === 1,
+      send_at: result.payload?.send_at || send_at || null,
+      isScheduled,
+      scheduledTime: scheduledDate,
+      status: result.success ? (isScheduled ? 'scheduled_waiting' : 'sent') : 'failed',
+      responseStatusCode: result.statusCode,
+      responseBody: result.data,
+      payloadSent: result.payload
+    });
+    await testRecord.save().catch(e => console.error('Error saving test record:', e));
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: 'SID test notification sent successfully!',
+        data: result.data,
+        payload: result.payload,
+        statusCode: result.statusCode,
+        record: testRecord
+      });
+    } else {
+      res.status(result.statusCode >= 400 && result.statusCode < 600 ? result.statusCode : 400).json({
+        success: false,
+        error: result.error || 'Failed to send SID test notification',
+        statusCode: result.statusCode,
+        data: result.data,
+        payload: result.payload
+      });
+    }
+  } catch (err) {
+    console.error('Error in send-sid-test route:', err);
+    res.status(500).json({ error: err.message || 'Internal server error while sending SID test notification' });
+  }
+});
+
+/**
+ * GET /api/webpushr/campaigns/test-logs
+ * Fetch recent test notification history (including scheduled waiting pushes)
+ */
+router.get('/test-logs', async (req, res) => {
+  try {
+    const logs = await WebpushrTestNotification.find().sort({ createdAt: -1 }).limit(30);
+    res.json({ success: true, logs });
+  } catch (err) {
+    res.status(500).json({ error: err.message || 'Failed to fetch test logs' });
   }
 });
 

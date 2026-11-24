@@ -4,6 +4,7 @@ import CampaignList from './components/CampaignList';
 import CreateCampaign from './components/CreateCampaign';
 import CampaignDetails from './components/CampaignDetails';
 import EditDraftCampaign from './components/EditDraftCampaign';
+import SegmentTest from './components/SegmentTest';
 import { 
   getCampaigns, 
   startCampaign, 
@@ -192,6 +193,10 @@ export default function App() {
                 setCurrentView('campaigns');
               }}
             />
+          )}
+
+          {currentView === 'segment' && (
+            <SegmentTest />
           )}
         </main>
       </div>
