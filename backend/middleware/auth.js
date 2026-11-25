@@ -29,4 +29,20 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect, JWT_SECRET };
+// Middleware: Superadmin only
+const superAdminOnly = (req, res, next) => {
+  if (req.user && req.user.role === 'superadmin') {
+    return next();
+  }
+  return res.status(403).json({ success: false, error: 'Access denied: Super Admin privileges required.' });
+};
+
+// Middleware: Delete permission check (Superadmin or canDelete permission)
+const checkDeletePermission = (req, res, next) => {
+  if (req.user && (req.user.role === 'superadmin' || req.user.permissions?.canDelete)) {
+    return next();
+  }
+  return res.status(403).json({ success: false, error: 'Permission denied: Only Super Admin can delete records.' });
+};
+
+module.exports = { protect, superAdminOnly, checkDeletePermission, JWT_SECRET };

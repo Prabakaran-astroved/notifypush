@@ -5,6 +5,7 @@ const xlsx = require('xlsx');
 const WebpushrCampaign = require('../models/WebpushrCampaign');
 const WebpushrCampaignSubscriber = require('../models/WebpushrCampaignSubscriber');
 const WebpushrTestNotification = require('../models/WebpushrTestNotification');
+const { protect, checkDeletePermission } = require('../middleware/auth');
 const {
   startCampaign,
   pauseCampaign,
@@ -402,9 +403,9 @@ router.get('/test-logs', async (req, res) => {
 
 /**
  * DELETE /api/webpushr/campaigns/test-logs
- * Bulk delete selected test notification logs
+ * Bulk delete selected test notification logs (Super Admin or delete permission only)
  */
-router.delete('/test-logs', async (req, res) => {
+router.delete('/test-logs', protect, checkDeletePermission, async (req, res) => {
   try {
     const { ids } = req.body;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
@@ -425,9 +426,9 @@ router.delete('/test-logs', async (req, res) => {
 
 /**
  * DELETE /api/webpushr/campaigns/test-logs/:id
- * Delete a single test notification log
+ * Delete a single test notification log (Super Admin or delete permission only)
  */
-router.delete('/test-logs/:id', async (req, res) => {
+router.delete('/test-logs/:id', protect, checkDeletePermission, async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await WebpushrTestNotification.findByIdAndDelete(id);
@@ -603,9 +604,9 @@ router.post('/:campaignId/retry-failed', async (req, res) => {
 
 /**
  * DELETE /api/webpushr/campaigns/:campaignId
- * Delete draft campaign only
+ * Delete draft campaign only (Super Admin or delete permission only)
  */
-router.delete('/:campaignId', async (req, res) => {
+router.delete('/:campaignId', protect, checkDeletePermission, async (req, res) => {
   try {
     const { campaignId } = req.params;
     const campaign = await WebpushrCampaign.findById(campaignId);

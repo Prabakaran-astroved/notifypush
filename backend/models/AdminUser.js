@@ -24,8 +24,14 @@ const adminUserSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['superadmin', 'admin', 'editor', 'viewer'],
+      enum: ['superadmin', 'admin', 'user'],
       default: 'admin'
+    },
+    permissions: {
+      canSendNotifications: { type: Boolean, default: true },
+      canCreateCampaigns: { type: Boolean, default: true },
+      canExportReports: { type: Boolean, default: true },
+      canDelete: { type: Boolean, default: false } // only superadmin by default
     },
     status: {
       type: String,
@@ -40,6 +46,14 @@ const adminUserSchema = new mongoose.Schema(
 );
 
 adminUserSchema.pre('save', async function () {
+  if (this.role === 'superadmin') {
+    this.permissions = {
+      canSendNotifications: true,
+      canCreateCampaigns: true,
+      canExportReports: true,
+      canDelete: true
+    };
+  }
   if (!this.isModified('password')) return;
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

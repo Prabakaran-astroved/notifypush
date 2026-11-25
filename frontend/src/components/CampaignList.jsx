@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { getCampaignsSummaryExportUrl } from '../api/campaignApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function CampaignList({ 
   campaigns, 
@@ -34,6 +35,9 @@ export default function CampaignList({
   statusFilter,
   setStatusFilter
 }) {
+
+  const { user } = useAuth();
+  const canDelete = user?.role === 'superadmin' || user?.permissions?.canDelete;
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -246,13 +250,15 @@ export default function CampaignList({
                             >
                               <Play className="w-4 h-4" />
                             </button>
-                            <button
-                              onClick={() => onDeleteCampaign(camp._id)}
-                              className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
-                              title="Delete Draft"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            {canDelete && (
+                              <button
+                                onClick={() => onDeleteCampaign(camp._id)}
+                                className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition"
+                                title="Delete Draft"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
                           </>
                         )}
 

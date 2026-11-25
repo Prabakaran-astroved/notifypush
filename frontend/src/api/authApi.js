@@ -42,4 +42,21 @@ export const getSystemSettings = () => {
   return api.get('/settings/config');
 };
 
+// User Management (Super Admin)
+export const getUsers = () => {
+  return api.get('/auth/users');
+};
+
+export const createUser = (data) => {
+  return api.post('/auth/users', data);
+};
+
+export const updateUser = (id, data) => {
+  return api.put(`/auth/users/${id}`, data);
+};
+
+export const deleteUser = (id) => {
+  return api.delete(`/auth/users/${id}`);
+};
+
 export default api;

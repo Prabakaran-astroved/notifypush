@@ -15,8 +15,12 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { sendSegmentNotification, sendSidTestNotification, getTestLogs, deleteTestLogs, deleteTestLog } from '../api/campaignApi';
+import { useAuth } from '../context/AuthContext';
 
 export default function SegmentTest() {
+  const { user } = useAuth();
+  const canDelete = user?.role === 'superadmin' || user?.permissions?.canDelete;
+
   const [activeTab, setActiveTab] = useState('segment'); // 'segment' | 'sid'
 
   // Shared / Tab form states
@@ -794,7 +798,7 @@ export default function SegmentTest() {
             )}
           </div>
           <div className="flex items-center space-x-2">
-            {selectedLogIds.length > 0 && (
+            {canDelete && selectedLogIds.length > 0 && (
               <button
                 onClick={handleDeleteSelected}
                 disabled={deletingLogs}
@@ -929,13 +933,17 @@ export default function SegmentTest() {
                         {new Date(log.createdAt).toLocaleDateString()} {new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </td>
                       <td className="py-3.5 px-3 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => handleDeleteSingle(log._id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                          title="Delete Log"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        {canDelete ? (
+                          <button
+                            onClick={() => handleDeleteSingle(log._id)}
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                            title="Delete Log"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        ) : (
+                          <span className="text-slate-300">-</span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -7,10 +7,19 @@ const api = axios.create({
   }
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('pushhub_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const parseExcelFile = (formData) => {
-  return axios.post('/api/webpushr/campaigns/parse-excel', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
+  const token = localStorage.getItem('pushhub_token');
+  const headers = { 'Content-Type': 'multipart/form-data' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return axios.post('/api/webpushr/campaigns/parse-excel', formData, { headers });
 };
 
 export const createCampaign = (campaignData) => {
