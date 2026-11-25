@@ -281,56 +281,6 @@ export default function CampaignDetails({ campaignId, onBack }) {
                 Retry All Failed ({campaign.failedCount})
               </button>
             )}
-
-            {/* Export Dropdown / Buttons */}
-            <div className="flex items-center space-x-1.5">
-              <a
-                href={getExportUrl(campaign._id, 'all')}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center border border-slate-200 transition"
-                title="Download All Subscribers Excel Report"
-              >
-                <Download className="w-3.5 h-3.5 mr-1 text-slate-500" /> Export All
-              </a>
-
-              {campaign.successCount > 0 && (
-                <a
-                  href={getExportUrl(campaign._id, 'success')}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center border border-emerald-200 transition"
-                  title="Download Successful Sent Subscribers Report"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Export Sent ({campaign.successCount})
-                </a>
-              )}
-
-              {campaign.failedCount > 0 && (
-                <a
-                  href={getExportUrl(campaign._id, 'failed')}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-xl text-xs font-bold flex items-center border border-rose-200 transition"
-                  title="Download Failed Subscribers Report"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1 text-rose-600" /> Export Failed ({campaign.failedCount})
-                </a>
-              )}
-
-              {selectedSids.length > 0 && (
-                <button
-                  type="button"
-                  onClick={handleExportSelected}
-                  disabled={exportLoading}
-                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center shadow-sm transition"
-                  title="Export Selected Subscribers"
-                >
-                  <Download className="w-3.5 h-3.5 mr-1" />
-                  {exportLoading ? 'Exporting...' : `Export Selected (${selectedSids.length})`}
-                </button>
-              )}
-            </div>
           </div>
         </div>
 
@@ -366,25 +316,92 @@ export default function CampaignDetails({ campaignId, onBack }) {
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Total SIDs</span>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{(campaign.validSubscribers || 0).toLocaleString()}</p>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Total SIDs</span>
+            <a
+              href={getExportUrl(campaign._id, 'all')}
+              target="_blank"
+              rel="noreferrer"
+              className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+              title="Export All SIDs (.xlsx)"
+            >
+              <Download className="w-3.5 h-3.5" />
+            </a>
+          </div>
+          <p className="text-2xl font-bold text-slate-900 mt-2">{(campaign.validSubscribers || 0).toLocaleString()}</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-          <span className="text-xs font-semibold text-slate-500 uppercase">Pending</span>
-          <p className="text-2xl font-bold text-slate-600 mt-1">{(campaign.pendingCount || 0).toLocaleString()}</p>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase">Pending</span>
+            {campaign.pendingCount > 0 && (
+              <a
+                href={getExportUrl(campaign._id, 'pending')}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition"
+                title="Export Pending SIDs (.xlsx)"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-slate-600 mt-2">{(campaign.pendingCount || 0).toLocaleString()}</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
-          <span className="text-xs font-semibold text-blue-600 uppercase">Processing</span>
-          <p className="text-2xl font-bold text-blue-600 mt-1">{(campaign.processingCount || 0).toLocaleString()}</p>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-blue-600 uppercase">Processing</span>
+            {campaign.processingCount > 0 && (
+              <a
+                href={getExportUrl(campaign._id, 'processing')}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1.5 text-blue-400 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition"
+                title="Export Processing SIDs (.xlsx)"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-blue-600 mt-2">{(campaign.processingCount || 0).toLocaleString()}</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-200 bg-emerald-50/20">
-          <span className="text-xs font-semibold text-emerald-700 uppercase">Sent Successfully</span>
-          <p className="text-2xl font-bold text-emerald-700 mt-1">{(campaign.successCount || 0).toLocaleString()}</p>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-emerald-200 bg-emerald-50/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-emerald-700 uppercase">Sent Successfully</span>
+            {campaign.successCount > 0 && (
+              <a
+                href={getExportUrl(campaign._id, 'success')}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1.5 text-emerald-600 hover:text-emerald-900 hover:bg-emerald-100/60 rounded-lg transition"
+                title="Export Sent Successfully SIDs (.xlsx)"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-emerald-700 mt-2">{(campaign.successCount || 0).toLocaleString()}</p>
         </div>
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/20">
-          <span className="text-xs font-semibold text-rose-700 uppercase">Failed</span>
-          <p className="text-2xl font-bold text-rose-700 mt-1">{(campaign.failedCount || 0).toLocaleString()}</p>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-rose-200 bg-rose-50/20 flex flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-rose-700 uppercase">Failed</span>
+            {campaign.failedCount > 0 && (
+              <a
+                href={getExportUrl(campaign._id, 'failed')}
+                target="_blank"
+                rel="noreferrer"
+                className="p-1.5 text-rose-600 hover:text-rose-900 hover:bg-rose-100/60 rounded-lg transition"
+                title="Export Failed SIDs (.xlsx)"
+              >
+                <Download className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+          <p className="text-2xl font-bold text-rose-700 mt-2">{(campaign.failedCount || 0).toLocaleString()}</p>
         </div>
       </div>
 
@@ -413,16 +430,31 @@ export default function CampaignDetails({ campaignId, onBack }) {
             </div>
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search by Subscriber ID..."
-              value={searchSid}
-              onChange={(e) => setSearchSid(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
-            />
-          </form>
+          <div className="flex items-center space-x-2 w-full sm:w-auto">
+            {selectedSids.length > 0 && (
+              <button
+                type="button"
+                onClick={handleExportSelected}
+                disabled={exportLoading}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold flex items-center shadow-sm transition whitespace-nowrap"
+                title="Export Selected Subscriber IDs"
+              >
+                <Download className="w-3.5 h-3.5 mr-1" />
+                {exportLoading ? 'Exporting...' : `Export Selected (${selectedSids.length})`}
+              </button>
+            )}
+
+            <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
+              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search by Subscriber ID..."
+                value={searchSid}
+                onChange={(e) => setSearchSid(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-orange-500 focus:outline-none"
+              />
+            </form>
+          </div>
         </div>
 
         {/* Table view */}
