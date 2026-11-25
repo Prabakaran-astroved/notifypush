@@ -4,6 +4,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const webpushrCampaignRoutes = require('./routes/webpushrCampaigns');
+const authRoutes = require('./routes/authRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 const WebpushrCampaignSubscriber = require('./models/WebpushrCampaignSubscriber');
 const WebpushrCampaign = require('./models/WebpushrCampaign');
 const { startCampaign } = require('./services/campaignQueueService');
@@ -30,6 +32,10 @@ app.get('/api/health', (req, res) => {
     service: 'AstroVed PushHub - Webpushr SID Campaign Manager'
   });
 });
+
+// Auth & Settings Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Webpushr Campaign Routes
 app.use('/api/webpushr/campaigns', webpushrCampaignRoutes);

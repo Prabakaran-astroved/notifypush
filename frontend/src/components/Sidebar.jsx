@@ -8,10 +8,14 @@ import {
   Users, 
   ChevronRight, 
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Sidebar({ currentView, setCurrentView }) {
+  const { user, logout } = useAuth();
   const menuItems = [
     {
       id: 'campaigns',
@@ -32,6 +36,12 @@ export default function Sidebar({ currentView, setCurrentView }) {
       icon: Users,
       parent: 'Webpushr',
       badge: 'Test'
+    },
+    {
+      id: 'settings',
+      name: 'Settings & Config',
+      icon: Settings,
+      parent: 'Webpushr'
     }
   ];
 
@@ -102,9 +112,31 @@ export default function Sidebar({ currentView, setCurrentView }) {
         </div>
       </div>
 
-      {/* Footer Info */}
-      <div className="p-4 border-t border-slate-800 text-xs text-slate-400 text-center">
-        AstroVed PushHub v2.0 • 2026
+      {/* Footer Info & User */}
+      <div className="p-4 border-t border-slate-800 space-y-3">
+        {user && (
+          <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+            <div className="flex items-center space-x-2 truncate">
+              <div className="w-7 h-7 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                <User className="w-3.5 h-3.5" />
+              </div>
+              <div className="truncate">
+                <div className="text-xs font-bold text-white truncate">{user.name}</div>
+                <div className="text-[10px] text-slate-400 truncate">{user.email}</div>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              title="Sign Out"
+              className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+        <div className="text-[11px] text-slate-400 text-center">
+          AstroVed PushHub v2.0 • 2026
+        </div>
       </div>
     </aside>
   );
