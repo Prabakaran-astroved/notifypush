@@ -22,7 +22,8 @@ import {
   pauseCampaign, 
   resumeCampaign, 
   retryFailedSubscribers,
-  getExportUrl
+  getExportUrl,
+  exportSelectedSubscribers
 } from '../api/campaignApi';
 
 export default function CampaignDetails({ campaignId, onBack }) {
@@ -36,6 +37,8 @@ export default function CampaignDetails({ campaignId, onBack }) {
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchSid, setSearchSid] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [selectedSids, setSelectedSids] = useState([]);
+  const [exportLoading, setExportLoading] = useState(false);
 
   // Fetch campaign info
   const fetchCampaignInfo = async () => {
@@ -140,6 +143,44 @@ export default function CampaignDetails({ campaignId, onBack }) {
     }
   };
 
+  // Selection handlers
+  const handleSelectAllOnPage = (e) => {
+    if (e.target.checked) {
+      const pageSids = subscribers.map(s => s.subscriberId);
+      setSelectedSids(prev => [...new Set([...prev, ...pageSids])]);
+    } else {
+      const pageSids = subscribers.map(s => s.subscriberId);
+      setSelectedSids(prev => prev.filter(id => !pageSids.includes(id)));
+    }
+  };
+
+  const handleToggleSelectSid = (sid) => {
+    setSelectedSids(prev =>
+      prev.includes(sid) ? prev.filter(id => id !== sid) : [...prev, sid]
+    );
+  };
+
+  // Export selected subscribers
+  const handleExportSelected = async () => {
+    if (selectedSids.length === 0) return;
+    setExportLoading(true);
+    try {
+      const res = await exportSelectedSubscribers(campaignId, selectedSids);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${campaign?.campaignName || 'campaign'}_selected_${selectedSids.length}_${Date.now()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Failed to export selected subscribers:', err);
+      alert('Failed to export selected subscribers.');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
   if (loading && !campaign) {
     return (
       <div className="p-12 text-center text-slate-500">
@@ -241,16 +282,55 @@ export default function CampaignDetails({ campaignId, onBack }) {
               </button>
             )}
 
-            {/* Export Dropdown / Button */}
-            <a
-              href={getExportUrl(campaign._id, statusFilter)}
-              target="_blank"
-              rel="noreferrer"
-              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center border border-slate-200 transition"
-              title="Download Campaign Excel Report"
-            >
-              <Download className="w-3.5 h-3.5 mr-1.5 text-slate-500" /> Export Excel
-            </a>
+            {/* Export Dropdown / Buttons */}
+            <div className="flex items-center space-x-1.5">
+              <a
+                href={getExportUrl(campaign._id, 'all')}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center border border-slate-200 transition"
+                title="Download All Subscribers Excel Report"
+              >
+                <Download className="w-3.5 h-3.5 mr-1 text-slate-500" /> Export All
+              </a>
+
+              {campaign.successCount > 0 && (
+                <a
+                  href={getExportUrl(campaign._id, 'success')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-xl text-xs font-bold flex items-center border border-emerald-200 transition"
+                  title="Download Successful Sent Subscribers Report"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Export Sent ({campaign.successCount})
+                </a>
+              )}
+
+              {campaign.failedCount > 0 && (
+                <a
+                  href={getExportUrl(campaign._id, 'failed')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-800 rounded-xl text-xs font-bold flex items-center border border-rose-200 transition"
+                  title="Download Failed Subscribers Report"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1 text-rose-600" /> Export Failed ({campaign.failedCount})
+                </a>
+              )}
+
+              {selectedSids.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleExportSelected}
+                  disabled={exportLoading}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center shadow-sm transition"
+                  title="Export Selected Subscribers"
+                >
+                  <Download className="w-3.5 h-3.5 mr-1" />
+                  {exportLoading ? 'Exporting...' : `Export Selected (${selectedSids.length})`}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -350,6 +430,15 @@ export default function CampaignDetails({ campaignId, onBack }) {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
+                <th className="py-3 px-3 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={subscribers.length > 0 && subscribers.every(s => selectedSids.includes(s.subscriberId))}
+                    onChange={handleSelectAllOnPage}
+                    title="Select all on this page"
+                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                  />
+                </th>
                 <th className="py-3 px-4">Subscriber ID</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-3 text-center">HTTP Code</th>
@@ -362,21 +451,33 @@ export default function CampaignDetails({ campaignId, onBack }) {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {subsLoading ? (
                 <tr>
-                  <td colSpan="7" className="py-10 text-center text-slate-400">
+                  <td colSpan="8" className="py-10 text-center text-slate-400">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-500" />
                     Fetching subscriber records...
                   </td>
                 </tr>
               ) : subscribers.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="py-10 text-center text-slate-400 font-medium">
+                  <td colSpan="8" className="py-10 text-center text-slate-400 font-medium">
                     No subscriber records found for the selected filter.
                   </td>
                 </tr>
               ) : (
                 subscribers.map((sub) => {
+                  const isChecked = selectedSids.includes(sub.subscriberId);
                   return (
-                    <tr key={sub._id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr 
+                      key={sub._id} 
+                      className={`hover:bg-slate-50/80 transition-colors ${isChecked ? 'bg-indigo-50/40' : ''}`}
+                    >
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleSelectSid(sub.subscriberId)}
+                          className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 cursor-pointer"
+                        />
+                      </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
                         {sub.subscriberId}
                       </td>

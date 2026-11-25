@@ -579,12 +579,14 @@ router.delete('/:campaignId', async (req, res) => {
 
 /**
  * GET /api/webpushr/campaigns/:campaignId/export
- * Export subscriber results to Excel (.xlsx) with optional status filter
+ * POST /api/webpushr/campaigns/:campaignId/export
+ * Export subscriber results to Excel (.xlsx) with optional status filter or selected subscriber IDs
  */
-router.get('/:campaignId/export', async (req, res) => {
+const handleExport = async (req, res) => {
   try {
     const { campaignId } = req.params;
-    const statusFilter = req.query.status ? String(req.query.status).trim() : '';
+    const statusFilter = (req.query.status || req.body.status) ? String(req.query.status || req.body.status).trim() : '';
+    const selectedSids = req.body.selectedSids || (req.query.sids ? req.query.sids.split(',').map(s => s.trim()) : null);
 
     const campaign = await WebpushrCampaign.findById(campaignId);
     if (!campaign) {
@@ -594,6 +596,9 @@ router.get('/:campaignId/export', async (req, res) => {
     const query = { campaignId };
     if (statusFilter && statusFilter !== 'all') {
       query.status = statusFilter;
+    }
+    if (selectedSids && Array.isArray(selectedSids) && selectedSids.length > 0) {
+      query.subscriberId = { $in: selectedSids };
     }
 
     const subscribers = await WebpushrCampaignSubscriber.find(query).sort({ subscriberId: 1 });
@@ -618,7 +623,8 @@ router.get('/:campaignId/export', async (req, res) => {
     const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     const sanitizedTitle = campaign.campaignName.replace(/[^a-z0-9_-]/gi, '_');
-    const filename = `${sanitizedTitle}_report_${Date.now()}.xlsx`;
+    const filterSuffix = selectedSids?.length ? `_selected_${selectedSids.length}` : (statusFilter ? `_${statusFilter}` : '_all');
+    const filename = `${sanitizedTitle}${filterSuffix}_${Date.now()}.xlsx`;
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -627,7 +633,10 @@ router.get('/:campaignId/export', async (req, res) => {
     console.error('Error exporting campaign report:', error);
     res.status(500).json({ error: error.message || 'Failed to export report' });
   }
-});
+};
+
+router.get('/:campaignId/export', handleExport);
+router.post('/:campaignId/export', handleExport);
 
 /**
  * POST /api/webpushr/campaigns/send-segment
