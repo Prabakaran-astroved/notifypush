@@ -281,6 +281,17 @@ export default function CampaignDetails({ campaignId, onBack }) {
                 Retry All Failed ({campaign.failedCount})
               </button>
             )}
+
+            {/* Export Excel Button */}
+            <a
+              href={getExportUrl(campaign._id, statusFilter)}
+              target="_blank"
+              rel="noreferrer"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center border border-slate-300 shadow-sm transition"
+              title="Download Campaign Excel Report"
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5 text-slate-600" /> Export Excel
+            </a>
           </div>
         </div>
 
