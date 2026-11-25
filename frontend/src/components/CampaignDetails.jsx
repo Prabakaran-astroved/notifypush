@@ -30,15 +30,12 @@ export default function CampaignDetails({ campaignId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [subscribers, setSubscribers] = useState([]);
   const [subsLoading, setSubsLoading] = useState(false);
-  const [subPagination, setSubPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [subPagination, setSubPagination] = useState({ page: 1, limit: 15, total: 0, totalPages: 1 });
   
   // Filters & search
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchSid, setSearchSid] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
-
-  // Selected subscribers for batch retry
-  const [selectedSids, setSelectedSids] = useState([]);
 
   // Fetch campaign info
   const fetchCampaignInfo = async () => {
@@ -133,33 +130,13 @@ export default function CampaignDetails({ campaignId, onBack }) {
     }
   };
 
-  const handleRetryFailed = async (specificIds = null) => {
+  const handleRetryFailed = async () => {
     setActionLoading(true);
     try {
-      await retryFailedSubscribers(campaignId, specificIds);
-      setSelectedSids([]);
+      await retryFailedSubscribers(campaignId, null);
       await Promise.all([fetchCampaignInfo(), fetchSubscribers(1)]);
     } finally {
       setActionLoading(false);
-    }
-  };
-
-  // Selection toggle
-  const toggleSelectSid = (sid) => {
-    if (selectedSids.includes(sid)) {
-      setSelectedSids(selectedSids.filter(id => id !== sid));
-    } else {
-      setSelectedSids([...selectedSids, sid]);
-    }
-  };
-
-  const toggleSelectAllFailed = () => {
-    const failedOnPage = subscribers.filter(s => s.status === 'failed').map(s => s.subscriberId);
-    const allSelected = failedOnPage.every(id => selectedSids.includes(id));
-    if (allSelected) {
-      setSelectedSids(selectedSids.filter(id => !failedOnPage.includes(id)));
-    } else {
-      setSelectedSids([...new Set([...selectedSids, ...failedOnPage])]);
     }
   };
 
@@ -255,12 +232,12 @@ export default function CampaignDetails({ campaignId, onBack }) {
 
             {campaign.failedCount > 0 && campaign.campaignStatus !== 'processing' && (
               <button
-                onClick={() => handleRetryFailed(selectedSids.length > 0 ? selectedSids : null)}
+                onClick={handleRetryFailed}
                 disabled={actionLoading}
                 className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold flex items-center shadow-sm"
               >
                 <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-                {selectedSids.length > 0 ? `Retry Selected (${selectedSids.length})` : `Retry All Failed (${campaign.failedCount})`}
+                Retry All Failed ({campaign.failedCount})
               </button>
             )}
 
@@ -373,14 +350,6 @@ export default function CampaignDetails({ campaignId, onBack }) {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-100/70 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider">
-                <th className="py-3 px-4 w-10 text-center">
-                  <input
-                    type="checkbox"
-                    onChange={toggleSelectAllFailed}
-                    title="Select all failed on this page"
-                    className="rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                  />
-                </th>
                 <th className="py-3 px-4">Subscriber ID</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-3 text-center">HTTP Code</th>
@@ -393,36 +362,21 @@ export default function CampaignDetails({ campaignId, onBack }) {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {subsLoading ? (
                 <tr>
-                  <td colSpan="8" className="py-10 text-center text-slate-400">
+                  <td colSpan="7" className="py-10 text-center text-slate-400">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-orange-500" />
                     Fetching subscriber records...
                   </td>
                 </tr>
               ) : subscribers.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="py-10 text-center text-slate-400 font-medium">
+                  <td colSpan="7" className="py-10 text-center text-slate-400 font-medium">
                     No subscriber records found for the selected filter.
                   </td>
                 </tr>
               ) : (
                 subscribers.map((sub) => {
-                  const isFailed = sub.status === 'failed';
-                  const isChecked = selectedSids.includes(sub.subscriberId);
-
                   return (
                     <tr key={sub._id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 text-center">
-                        {isFailed ? (
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleSelectSid(sub.subscriberId)}
-                            className="rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                          />
-                        ) : (
-                          <span className="text-slate-300">-</span>
-                        )}
-                      </td>
                       <td className="py-3 px-4 font-mono font-bold text-slate-900">
                         {sub.subscriberId}
                       </td>
