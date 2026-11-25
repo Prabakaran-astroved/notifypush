@@ -296,6 +296,57 @@ router.post('/', upload.single('file'), async (req, res) => {
 });
 
 /**
+ * GET /api/webpushr/campaigns/export-summary
+ * Export campaign overview list to Excel (.xlsx)
+ */
+router.get('/export-summary', async (req, res) => {
+  try {
+    const search = req.query.search ? String(req.query.search).trim() : '';
+    const status = req.query.status ? String(req.query.status).trim() : '';
+
+    const filter = {};
+    if (status) {
+      filter.campaignStatus = status;
+    }
+    if (search) {
+      filter.campaignName = { $regex: search, $options: 'i' };
+    }
+
+    const campaigns = await WebpushrCampaign.find(filter).sort({ createdAt: -1 });
+
+    const exportRows = campaigns.map(c => ({
+      'Campaign Name': c.campaignName,
+      'Notification Title': c.notification?.title || '',
+      'Notification Message': c.notification?.message || '',
+      'Target URL': c.notification?.target_url || '',
+      'Total SIDs': c.validSubscribers || 0,
+      'Pending': c.pendingCount || 0,
+      'Processing': c.processingCount || 0,
+      'Sent Successfully': c.successCount || 0,
+      'Failed': c.failedCount || 0,
+      'Status': c.campaignStatus,
+      'Created Date': c.createdAt ? new Date(c.createdAt).toLocaleString() : '',
+      'Started Date': c.startedAt ? new Date(c.startedAt).toLocaleString() : '',
+      'Completed Date': c.completedAt ? new Date(c.completedAt).toLocaleString() : ''
+    }));
+
+    const worksheet = xlsx.utils.json_to_sheet(exportRows);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Campaigns Summary');
+
+    const fileBuffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const filename = `Campaigns_Summary_${Date.now()}.xlsx`;
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(fileBuffer);
+  } catch (error) {
+    console.error('Error exporting campaigns summary:', error);
+    res.status(500).json({ error: error.message || 'Failed to export campaigns summary' });
+  }
+});
+
+/**
  * GET /api/webpushr/campaigns
  * List campaigns with pagination, status filter and search
  */

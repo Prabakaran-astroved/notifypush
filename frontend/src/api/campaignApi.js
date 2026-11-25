@@ -77,6 +77,10 @@ export const getExportUrl = (campaignId, status = 'all') => {
   return `/api/webpushr/campaigns/${campaignId}/export?status=${status}`;
 };
 
+export const getCampaignsSummaryExportUrl = (search = '', status = '') => {
+  return `/api/webpushr/campaigns/export-summary?search=${encodeURIComponent(search)}&status=${encodeURIComponent(status)}`;
+};
+
 export const exportSelectedSubscribers = (campaignId, selectedSids) => {
   return api.post(`/${campaignId}/export`, { selectedSids }, { responseType: 'blob' });
 };

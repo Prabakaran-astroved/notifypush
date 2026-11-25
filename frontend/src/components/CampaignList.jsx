@@ -11,8 +11,11 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Download
 } from 'lucide-react';
+
+import { getCampaignsSummaryExportUrl } from '../api/campaignApi';
 
 export default function CampaignList({ 
   campaigns, 
@@ -90,6 +93,16 @@ export default function CampaignList({
           </p>
         </div>
         <div className="flex items-center space-x-3">
+          <a
+            href={getCampaignsSummaryExportUrl(searchQuery, statusFilter)}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold border border-slate-300 shadow-sm transition"
+            title="Export Campaigns Summary to Excel (.xlsx)"
+          >
+            <Download className="w-4 h-4 mr-2 text-slate-600" />
+            Export Excel
+          </a>
           <button
             onClick={() => fetchCampaigns()}
             disabled={loading}
