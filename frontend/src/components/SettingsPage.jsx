@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, ShieldCheck, Database, Key, Server, User, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Settings, ShieldCheck, Database, Key, Server, User, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSystemSettings, updateProfile } from '../api/authApi';
 
@@ -13,6 +13,8 @@ export default function SettingsPage() {
   const [email, setEmail] = useState(user?.email || '');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showCurrentPw, setShowCurrentPw] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
   const [profileMsg, setProfileMsg] = useState({ type: '', text: '' });
   const [profileSaving, setProfileSaving] = useState(false);
 
@@ -120,20 +122,40 @@ export default function SettingsPage() {
             <div className="pt-2 border-t border-slate-100">
               <span className="font-bold text-slate-600 block mb-2">Change Password (Optional)</span>
               <div className="space-y-2">
-                <input
-                  type="password"
-                  placeholder="Current Password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white"
-                />
-                <input
-                  type="password"
-                  placeholder="New Password (min 6 characters)"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white"
-                />
+                <div className="relative">
+                  <input
+                    type={showCurrentPw ? 'text' : 'password'}
+                    placeholder="Current Password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPw(!showCurrentPw)}
+                    className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                    title={showCurrentPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showCurrentPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    placeholder="New Password (min 6 characters)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full pl-3.5 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPw(!showNewPw)}
+                    className="absolute right-3 top-2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                    title={showNewPw ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
               </div>
             </div>
 
